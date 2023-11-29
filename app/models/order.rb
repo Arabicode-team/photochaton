@@ -1,9 +1,11 @@
 class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
+  has_many :items, through: :order_items
   belongs_to :user
 
   before_destroy :destroy_associated_records
   after_create :clear_cart_after_order
+  after_create :confirmation_order_send
 
   private
 
@@ -26,5 +28,9 @@ class Order < ApplicationRecord
     cart = Cart.find_by(user_id: self.user_id)
     cart&.cart_items&.clear
     cart&.update(total_price: nil)
+  end
+  
+  def confirmation_order_send
+    OrderConfirmationMailer.order_confirmation_mail(self).deliver_now
   end
 end
